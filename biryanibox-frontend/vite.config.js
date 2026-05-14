@@ -8,24 +8,37 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (id.includes('node_modules/react')) {
+          // React core — must ALL be together to avoid createContext undefined error
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react-router') ||
+            id.includes('node_modules/scheduler/')
+          ) {
             return 'vendor-react';
           }
+
+          // Heavy UI libraries in their own chunk
+          if (
+            id.includes('node_modules/framer-motion') ||
+            id.includes('node_modules/lucide-react')
+          ) {
+            return 'vendor-ui';
+          }
+
+          // All other node_modules
           if (id.includes('node_modules/')) {
             return 'vendor';
           }
-          if (id.includes('src/pages/Dashboard')) {
-            return 'dashboard';
-          }
-          if (id.includes('src/components/POS')) {
-            return 'pos';
-          }
-          if (id.includes('src/pages/Home')) {
-            return 'home';
-          }
-          if (id.includes('src/pages/Login') || id.includes('src/pages/CustomerAuth')) {
-            return 'auth';
-          }
+
+          // App-level code splitting
+          if (id.includes('src/pages/Dashboard')) return 'dashboard';
+          if (id.includes('src/components/POS'))  return 'pos';
+          if (id.includes('src/pages/Home'))       return 'home';
+          if (
+            id.includes('src/pages/Login') ||
+            id.includes('src/pages/CustomerAuth')
+          ) return 'auth';
         }
       }
     },
