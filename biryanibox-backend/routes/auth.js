@@ -12,7 +12,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const sendOTPEmail = async (email, otp, name, subject = 'Your Biryani Box OTP Code') => {
   try {
     await resend.emails.send({
-      from: 'Biryani Box <onboarding@resend.dev>',
+      from: "Biryani Box <no-reply@biriyani-box.com>",
       to:   email,
       subject,
       html: `
