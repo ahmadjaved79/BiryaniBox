@@ -15,7 +15,9 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:3000',
     'https://biryani-box.vercel.app',
-    'https://biryani-box-ck8d.vercel.app',   // ← your actual Vercel URL
+    'https://biryani-box-ck8d.vercel.app', 
+    "https://www.biriyani-box.com",
+    "https://biriyani-box.com",  // ← your actual Vercel URL
     process.env.CLIENT_URL,                   // ← set this on Render dashboard
   ].filter(Boolean),
   credentials: true,
