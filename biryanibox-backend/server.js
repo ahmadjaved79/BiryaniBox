@@ -9,8 +9,15 @@ connectDB();
 
 const app = express();
 
+// ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3000', 'https://biryani-box.vercel.app'],
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://biryani-box.vercel.app',
+    'https://biryani-box-ck8d.vercel.app',   // ← your actual Vercel URL
+    process.env.CLIENT_URL,                   // ← set this on Render dashboard
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -182,11 +189,12 @@ function startCateringReminderJob() {
   setTimeout(checkCateringReminders, 10000);
   console.log('[CateringReminderJob] 24-hour catering reminder scheduler started (runs every hour)');
 }
+
 function startReservationJob() {
-  const Reservation    = require('./models/Reservation');
+  const Reservation     = require('./models/Reservation');
   const RestaurantTable = require('./models/RestaurantTable');
-  const Notification   = require('./models/Notification');
-  const User           = require('./models/User');
+  const Notification    = require('./models/Notification');
+  const User            = require('./models/User');
 
   const THIRTY_MIN = 30 * 60 * 1000;
 
