@@ -2,26 +2,18 @@ const express = require('express');
 const router  = express.Router();
 const bcrypt  = require('bcryptjs');
 const crypto  = require('crypto');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const User    = require('../models/User');
 const { protect } = require('../middleware/auth');
 
-// ─── Nodemailer transporter (configure via .env) ─────────────────────────────
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
-  port:   parseInt(process.env.SMTP_PORT  || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// ─── Resend email client ──────────────────────────────────────────────────────
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOTPEmail = async (email, otp, name, subject = 'Your Biryani Box OTP Code') => {
   try {
-    await transporter.sendMail({
-      from:    `"Biryani Box" <${process.env.SMTP_USER}>`,
-      to:      email,
+    await resend.emails.send({
+      from: 'Biryani Box <onboarding@resend.dev>',
+      to:   email,
       subject,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#111;color:#fff;border-radius:16px;">
@@ -33,11 +25,9 @@ const sendOTPEmail = async (email, otp, name, subject = 'Your Biryani Box OTP Co
         </div>
       `,
     });
+    console.log(`[Email] OTP sent to ${email}`);
   } catch (err) {
     console.error('OTP email error:', err.message);
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[DEV] OTP for ${email}: ${otp}`);
-    }
   }
 };
 
@@ -79,12 +69,12 @@ router.post('/verify-otp', async (req, res, next) => {
     if (user.otp_expires < new Date())
       return res.status(400).json({ success: false, message: 'OTP expired. Request a new one.' });
 
-    user.name         = name || user.name;
-    user.phone        = phone || user.phone;
+    user.name          = name || user.name;
+    user.phone         = phone || user.phone;
     user.password_hash = password;
-    user.is_verified  = true;
-    user.otp_code     = undefined;
-    user.otp_expires  = undefined;
+    user.is_verified   = true;
+    user.otp_code      = undefined;
+    user.otp_expires   = undefined;
     await user.save();
 
     const token = user.getSignedToken();
@@ -183,8 +173,8 @@ router.post('/reset-password', async (req, res, next) => {
     const user = await User.findOne({ reset_token: hashed, reset_expire: { $gt: Date.now() } });
     if (!user) return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     user.password_hash = password;
-    user.reset_token = undefined;
-    user.reset_expire = undefined;
+    user.reset_token   = undefined;
+    user.reset_expire  = undefined;
     await user.save();
     const jwt_token = user.getSignedToken();
     res.json({ success: true, token: jwt_token });
@@ -227,8 +217,8 @@ router.post('/reset-password-otp', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'OTP expired. Request a new one.' });
 
     user.password_hash = new_password;
-    user.otp_code     = undefined;
-    user.otp_expires  = undefined;
+    user.otp_code      = undefined;
+    user.otp_expires   = undefined;
     await user.save();
 
     res.json({ success: true, message: 'Password updated successfully.' });
