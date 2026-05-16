@@ -1,15 +1,10 @@
 const express = require('express');
 const router  = express.Router();
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const Feedback = require('../models/Feedback');
 const { protect, authorize } = require('../middleware/auth');
 
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST || 'smtp.gmail.com',
-  port:   parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const normaliseCategory = (cat) => {
   if (!cat) return 'general';
@@ -115,11 +110,11 @@ router.post('/:id/reply', protect, authorize('owner', 'manager'), async (req, re
     if (!feedback.customer_email) return res.status(400).json({ success: false, message: 'No customer email on this feedback' });
 
     let emailSent = false;
-    if (process.env.SMTP_USER) {
+    if (process.env.RESEND_API_KEY) {
       try {
         const replierLabel = role === 'manager' ? 'Manager' : 'Owner';
-        await transporter.sendMail({
-          from:    `"Biryani Box" <${process.env.SMTP_USER}>`,
+        await resend.emails.send({
+          from:    process.env.RESEND_FROM || 'Biryani Box <no-reply@biryanibox.com>',
           to:      feedback.customer_email,
           subject: 'Response to your Biryani Box Feedback',
           html: `<div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;background:#111;color:#fff;border-radius:16px;">

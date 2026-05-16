@@ -11,21 +11,16 @@ const LoyaltyTransaction = require('../models/LoyaltyTransaction');
 const Notification       = require('../models/Notification');
 const Delivery           = require('../models/Delivery');
 const ChefOrderAssignment = require('../models/ChefOrderAssignment');
-const nodemailer         = require('nodemailer');
+const { Resend } = require('resend');
 const { protect, authorize } = require('../middleware/auth');
 
-// ── Email transporter ──────────────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
-  port:   parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-});
+// ── Email (Resend) ─────────────────────────────────────────────────────────
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.SMTP_USER) return;
+  if (!process.env.RESEND_API_KEY) return;
   try {
-    await transporter.sendMail({ from: `"Biryani Box" <${process.env.SMTP_USER}>`, to, subject, html });
+    await resend.emails.send({ from: process.env.RESEND_FROM || 'Biryani Box <no-reply@biryanibox.com>', to, subject, html });
   } catch (err) { console.error('[Email]', err.message); }
 };
 

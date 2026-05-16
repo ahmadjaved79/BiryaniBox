@@ -5,21 +5,16 @@ const { protect, authorize } = require('../middleware/auth');
 const Notification = require('../models/Notification');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const MenuItem = require('../models/MenuItem');
 
-/* ── Email transporter (shared with catering) ───────────────────────────── */
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
-  port:   parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-});
+/* ── Email (Resend) ─────────────────────────────────────────────────────── */
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.SMTP_USER) { console.log(`[Email] ${subject} → ${to}`); return; }
-  try { await transporter.sendMail({ from: `"Biryani Box" <${process.env.SMTP_USER}>`, to, subject, html }); }
+  if (!process.env.RESEND_API_KEY) { console.log(`[Email] ${subject} → ${to}`); return; }
+  try { await resend.emails.send({ from: process.env.RESEND_FROM || 'Biryani Box <no-reply@biryanibox.com>', to, subject, html }); }
   catch (err) { console.error('[Email]', err.message); }
 };
 

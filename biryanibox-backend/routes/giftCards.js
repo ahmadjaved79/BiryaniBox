@@ -1,27 +1,22 @@
 const express    = require('express');
 const router     = express.Router();
 const crypto     = require('crypto');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const GiftCard   = require('../models/GiftCard');
 const GiftCardTransaction = require('../models/GiftCardTransaction');
 const { protect, authorize } = require('../middleware/auth');
 
-// ── Email transporter ─────────────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST  || 'smtp.gmail.com',
-  port:   parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-});
+// ── Email (Resend) ────────────────────────────────────────────────────────
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendGiftCardEmail = async ({ receiver_email, receiver_name, sender_name, code, denomination }) => {
-  if (!process.env.SMTP_USER) {
-    console.log(`[GiftCard] Code ${code} for ${receiver_email} (SMTP not configured)`);
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[GiftCard] Code ${code} for ${receiver_email} (Resend not configured)`);
     return;
   }
   try {
-    await transporter.sendMail({
-      from:    `"Biryani Box" <${process.env.SMTP_USER}>`,
+    await resend.emails.send({
+      from:    process.env.RESEND_FROM || 'Biryani Box <no-reply@biryanibox.com>',
       to:      receiver_email,
       subject: `${sender_name || 'Someone'} sent you a Biryani Box Gift Card!`,
       html: `
